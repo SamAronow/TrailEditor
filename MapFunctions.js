@@ -52,7 +52,7 @@ function addDataToTable(name){
     var newRow = table.insertRow();
 
     var buttons = new Array(3);
-    for (var i =0; i<3; i++){
+    for (var i =0; i<4; i++){
         buttons[i] = document.createElement("button");
     }
 
@@ -68,8 +68,12 @@ function addDataToTable(name){
     buttons[2].textContent = "Edit";
     buttons[2].addEventListener("click",promptChange);
 
+    buttons[3].id = name+"copy";
+    buttons[3].textContent = "Copy";
+    buttons[3].addEventListener("click",copy);
+
     var info = getInfo(name);
-    for (var i = 0; i < 8; i++) {
+    for (var i = 0; i < 9; i++) {
         newRow.insertCell();
         if (i<5){
             newRow.cells[i].innerHTML = info[i];
@@ -80,6 +84,25 @@ function addDataToTable(name){
             buttons[i-5].style.color = info[5];
         }
       }
+ }
+
+ function validEnter(name){
+    var curInfo = getInfo(name);
+    var tempInfo;
+    var valid;
+        for (var i =0; i<window.layers.length; i++){
+            valid = false;
+            tempInfo = getInfo(window.layers[i].id);
+            for (var j =0; j<curInfo.length-1; j++){
+                if (curInfo[j]!=tempInfo[j]){
+                    valid = true;
+                }
+            }
+            if (!valid){
+                return false;
+            }
+        }
+        return true;
  }
 
 
@@ -94,7 +117,7 @@ function addlay(coords,map,name,color){
 
 //adds all the trails to the map and the arrays
 function setUpTrails(map){
-    addlay(window.keezer.features[0].geometry.coordinates[0],map,"keezer_d--_a--_tx--_ty--_c#00f","#00f");
+    addlay(window.keezer.features[0].geometry.coordinates[0],map,"keezer_d--_a--_tx--_ty--_cblue","blue");
     //addlay(window.twine.features[0].geometry.coordinates[0],map,"twine_d--_a--_tx--_ty--_c#00f","#00f");
 
 }
