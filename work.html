@@ -81,7 +81,7 @@ body { margin: 0; padding: 0; }
       bottom: 70px;
       right: 10px;
       width: 400px;
-      height: 320px;
+      height: 300px;
       background-color: white;
       padding: 20px;
       border: 1px solid #ccc;
@@ -91,10 +91,6 @@ body { margin: 0; padding: 0; }
     }
     #popupContent {
       margin-bottom: 10px;
-    }
-    #closeButton {
-      display: block;
-      margin: 0 auto;
     }
 
 </style>
@@ -168,9 +164,8 @@ body { margin: 0; padding: 0; }
             using the table, or click copy to copy a geoJSON of the modification to your clipboard.
           </p>
         </div>
-        <button id="closeButton" onclick="closeTutorial()">Close</button>
       </div>
-      <label id="infoButton" onclick="openTutorial()">Tutorial</label>
+      <label id="infoButton" onclick="toggleTutorial()">Tutorial</label>
 </div>
 
 <script>
@@ -305,6 +300,7 @@ function promptChange(event){
 
 function change(){
     fields = gatherFields();
+    document.getElementById("change").style.display = "none";
     if (fields.length==0){
         return;
     }
@@ -403,8 +399,13 @@ function useSattellite() {
       //map.setStyle('mapbox://styles/mapbox/satellite-v9'); // Switch to satellite view
       map.setStyle('mapbox://styles/mapbox/satellite-streets-v11');
   }
-  function openTutorial() {
-      document.getElementById('infoPopup').style.display = 'block';
+  function toggleTutorial() {
+    if (document.getElementById('infoPopup').style.display=='block'){
+        document.getElementById('infoPopup').style.display = 'none';
+    }
+    else{
+        document.getElementById('infoPopup').style.display = 'block'; 
+    }
     }
 
     function closeTutorial() {
