@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Work</title>
+<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+<link rel="icon" type="image/png" href="TCTLOGO.png" sizes="32x32" />
+
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+<script src = "allgeo.js"></script>
+<script src = "Algo.js"></script>
+<script src = "MapFunctions.js"></script>
+
+<style>
+body { margin: 0; padding: 0; }
+#map { position: absolute; top: 0; bottom: 0; width: 100%; }
+#commands {
+        position: relative;
+        top: 0;
+        bottom: 0;
+        width: 100%;
+      }
+.popup-container {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+.popup {
+  width: 400px;
+  height: 450px;
+  background-color: #fff;
+  padding: 10px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+.buttons {
+  text-align: center;
+  margin-top: 5px;
+}
+#enterGeo {
+    width: 350px;
+    height: 300px;
+    resize: vertical;
+    resize: none;
+}
+#error-message {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: red;
+  color: white;
+  padding: 10px;
+  border-radius: 4px;
+}
+#infoButton {
+      position: fixed;
+      bottom: 30px;
+      right: 10px;
+      width: 55px;
+      height: 20px;
+      cursor: pointer;
+      z-index: 1000;
+      background-color: gray;
+      color: white;
+      font-size: medium;
+}
+#infoPopup {
+      display: none;
+      position: fixed;
+      bottom: 70px;
+      right: 10px;
+      width: 400px;
+      height: 300px;
+      background-color: white;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+    }
+    #popupContent {
+      margin-bottom: 10px;
+    }
+
+</style>
+
+</head>
+<body>
+    <div id="map">
+        <div id = "commands">
+        <select id = file onchange = "addPopUp()"> 
+            <option value="create">Add GEOJSON</option>
+        </select>
+        <label for="dist">Distance Threshold:</label>
+        <input type="text" id="distance" name="distance"> 
+        <label for="angle">Angle Threshold:</label>
+        <input type="text" id="angle" name="angle"> 
+        <label for="translationX">translationX:</label>
+        <input type="text" id="translationX" name="translationX"> 
+        <label for="translationY">translationY:</label>
+        <input type="text" id="translationY" name="translationY"> 
+        <label for="color">Color:</label>
+        <select id = "color"> 
+            <option value = "red">Red</option>
+            <option value = "orange">Orange</option>
+            <option value = "green">Green</option>
+            <option value = "blue">Blue</option>
+            <option value = "purple">Purple</option>
+            <option value = "black">Black</option>
+        </select>
+        <!-- <input type="text" id="color" name="color">-->
+        <button onclick="createNew()">Create New</button>
+        <button id = "change" onclick = "change()"> Change </button>
+        <table id = "datatable">
+            <tr>
+              <th>Filter %</th>
+              <th>File</th>
+              <th>Distance</th>
+              <th>Angle</th>
+              <th>Translation(X/Y)</th>
+              <th>Toggle</th>
+              <th>Remove</th>
+              <th>Edit</th>
+              <th>Copy</th>
+            </tr>
+          </table> 
+    </div>
+    <div id="error-message"></div>
+    <div id="popupContainer" class="popup-container">
+        <div class="popup">
+          <h2>Create a new GEOJSON:</h2>
+            <label>Enter Name:</label>
+            <input type="text" id="geoName" name="geoName">
+            <br><br>
+            <label>Enter GEOJSON Data</label>
+            <textarea id="enterGeo" name="enterGeo"></textarea>
+          <div class="buttons">
+            <button id = "cancel" onclick="cancelPopup()">Cancel</button>
+            <button id = "submit" onclick="submitPopup()">Submit</button>
+          </div>
+        </div>
+      </div>
+      <div id="infoPopup">
+        <div id="popupContent">
+          <h2>Tutorial</h2>
+          <p>Use this to modify trails. Use the distance and angle thresholds to modify the trails such that for every 
+            coordinate in the trail, if it is closer than your distance threshold (in degrees of latitude and longitude) 
+            and the angle formed by the point and the one before and after is greater than the angle threshold (in radians)
+            then it will eliminate the point to clean up the trail. Additionaly the value in translation X and Y will translate
+            the trail that many degrees of latitude or longitude. You can add trails using the drop down at the top and selecting 
+            add GeoJSON and then inputting your own geojson which will then add a baseline version of it in Blue. Then to modify
+            different geoJSONS you can toggle them in the dropdown and you can edit toggle or remove any trail modifications 
+            using the table, or click copy to copy a geoJSON of the modification to your clipboard.
+          </p>
+        </div>
+      </div>
+      <label id="infoButton" onclick="toggleTutorial()">Tutorial</label>
+</div>
+
+<script>
+
+//set up the mapbox map
+mapboxgl.accessToken = 'pk.eyJ1Ijoic2FtYXJudyIsImEiOiJjbGl1c2F1dDAwOW02M3BueTJwdDViNHY4In0.5F8W4nYLQk7H0xjRONCGkw';
+const map = new mapboxgl.Map({
+    container: 'map', // container ID
+    // Choose from Mapbox's core styles, or make your own style with Mapbox Studio
+    style: 'mapbox://styles/mapbox/streets-v12', // style URL
+    center: [-70.05, 41.99], // starting position [lng, lat]
+    zoom: 15 // starting zoom
+});
+
+//put the table and the text fields above the map so they're visible
+document.getElementById('map').style.zIndex = '0';
+document.getElementById('commands').style.zIndex = '999';
+document.getElementById('datatable').style.zIndex = '1000';
+document.getElementById('error-message').style.zIndex = '1001';
+
+//function to give an array with the values of the textfields
+function gatherFields(){
+    //ensure valid entries
+    if (document.getElementById("distance").value=="" || isNaN(document.getElementById("distance").value)){
+        printError("Distance Threshold: is not valid");
+        return new Array(0);
+    }
+    if (document.getElementById("angle").value=="" || isNaN(document.getElementById("angle").value)){
+        printError("Angle Threshold: is not valid");
+        return new Array(0);
+    }
+    if (document.getElementById("translationX").value=="" || isNaN(document.getElementById("translationX").value)){
+        printError("translation x: is not valid");
+        return new Array(0);
+    }
+    if (document.getElementById("translationY").value==""  || isNaN(document.getElementById("translationY").value)){
+        printError("translation x: is not valid");
+        return new Array(0);
+    }
+    var fields = new Array(6);
+    fields[0] = document.getElementById('distance').value
+    fields[1] = document.getElementById('angle').value;
+    fields[2] = document.getElementById('translationX').value;
+    fields[3] = document.getElementById('translationY').value;
+    fields[4] = document.getElementById('color').value;
+    fields[5] = document.getElementById("file").value;
+    var drop = document.getElementById("file");
+    var fileName = drop.options[drop.selectedIndex].textContent;
+    fields[6] = fileName+"_d"+fields[0]+"_a"+fields[1]+"_tx"+fields[2]+"_ty"+fields[3]+"_c"+fields[4];
+    return fields;
+}
+
+
+//initiate the map once its loaded
+document.getElementById("change").style.display = "none";
+var dropdown = document.getElementById("file");
+var option = document.createElement("option");
+option.text = "keezer";
+option.value = JSON.stringify(keezer);
+dropdown.options.add(option,dropdown.options.length-1);
+//var option2 = document.createElement("option");
+//option2.text = "twine";
+//option2.value = JSON.stringify(twine);
+//file.options.add(option2,file.options.length-1);
+//file.options.add(option2,file.options.length-1);
+dropdown.selectedIndex = 0;
+map.on('load', function() {
+    setUpTrails(map);
+}
+);
+
+//function for when they enter a new trail modification
+function createNew(){
+    var fields = gatherFields();
+    if (fields.length ==0){
+        return;
+    }
+    if (validEnter(fields[6])){
+        addlay(translate(fields[2],fields[3],reduce(JSON.parse(fields[5]),fields[1],fields[0])),map,fields[6],fields[4]);
+    }
+    else{
+        printError("This trail modifcation already exists");
+    }
+}
+
+//if any of the toggle buttons are pressed it goes here and the event tells
+//the function which button was pressed and that toggles is on or off
+function toggle(event){
+    var layerId = event.target.id.substring(0, event.target.id.length - 3);
+    if (event.target.innerHTML=="Show"){
+        event.target.textContent = "Hide";
+        map.setLayoutProperty(layerId, 'visibility', 'visible');
+    }
+    else{
+        map.setLayoutProperty(layerId, 'visibility', 'none');
+        event.target.textContent = "Show";
+    }
+}
+
+function remove(event){
+    var index = event.target.parentNode.parentNode.rowIndex-1;
+    document.getElementById("datatable").deleteRow(index+1); //heading is 0th index
+    map.removeLayer(layers[index].id);
+    map.removeSource(layers[index].id);
+    layers.splice(index,1);
+    if (document.getElementById("change").style.display =="block"){
+        document.getElementById("change").style.display = "none";
+    }
+}
+
+//give it global scope so can do the change knowing the label.
+var curIndex;
+function promptChange(event){
+    curIndex = event.target.parentNode.parentNode.rowIndex-1;
+    var curLayerId = layers[curIndex].id;
+    document.getElementById("change").style.display = "block";
+
+    var info = getInfo(curLayerId);
+    document.getElementById("distance").value = info[2];
+    document.getElementById("angle").value = info[3];
+    document.getElementById("translationX").value = info[4].substring(0,info[4].indexOf("/"));
+    document.getElementById("translationY").value = info[4].substring(info[4].indexOf("/")+1);
+    document.getElementById("color").value = info[5];
+    var dropdown = document.getElementById("file");
+    for (var i = 0; i < dropdown.options.length; i++) {
+        if (dropdown.options[i].textContent == info[1]) {
+    dropdown.selectedIndex = i;
+    break; 
+  }
+}
+}
+
+function change(){
+    fields = gatherFields();
+    document.getElementById("change").style.display = "none";
+    if (fields.length==0){
+        return;
+    }
+    if (!validEnter(fields[6])){
+        printError("This trail modifcation already exists");
+        return;
+    }
+    document.getElementById("change").style.display = "none";
+    map.removeLayer(layers[curIndex].id);
+    map.removeSource(layers[curIndex].id);
+    layers.splice(curIndex,1,createLayerClass(translate(fields[2],fields[3],reduce(JSON.parse(fields[5]),fields[1],fields[0])),map,fields[6],fields[4]));
+    map.addLayer(layers[curIndex]);
+    var info = getInfo(fields[6]);
+    var row = document.getElementById("datatable").rows[curIndex+1];
+    for (var i =0; i<9; i++){
+        if (i<5){
+            row.cells[i].innerHTML = info[i];
+            row.cells[i].style.color = info[5];
+        }
+        else{
+            row.cells[i].querySelector("button").style.color = info[5];
+        }
+    }
+    row.cells[5].querySelector("button").id = fields[6]+"tog";
+    row.cells[6].querySelector("button").id = fields[6]+"rem";
+    row.cells[7].querySelector("button").id = fields[6]+"edit";
+    row.cells[8].querySelector("button").id = fields[6]+"copy";
+}
+
+
+function addPopUp() {
+    if (document.getElementById("file").value != "create"){
+        return;
+    }
+  var popupContainer = document.getElementById("popupContainer");
+  popupContainer.style.display = "block";
+  var input = document.getElementById("enterGeo");
+}
+
+function cancelPopup() {
+  document.getElementById("popupContainer").style.display = "none";
+  document.getElementById("file").selectedIndex=0;
+}
+
+function submitPopup() {
+  var popupContainer = document.getElementById("popupContainer");
+  if (document.getElementById("geoName").value==""){
+    printError("Enter Name: is empty");
+    return;
+  }
+  try{
+    var json = JSON.parse(document.getElementById("enterGeo").value);
+    json.features[0].geometry.coordinates[0]
+  }
+  catch(error){
+    printError("Not a valid GEOJSON. Here is a sample valid GEOJSON");
+    document.getElementById("enterGeo").value = JSON.stringify(example);
+    return;
+  }
+  var option = document.createElement("option");
+  for (var i=0; i<document.getElementById("file").options.length-1; i++){
+    if (document.getElementById("file").options[i].value == JSON.stringify(json)){
+        printError("That GEOJSON already exists");
+        return;
+    }
+    if (document.getElementById("file").options[i].textContent == document.getElementById("geoName").value){
+        printError("That name already exists");
+        return;
+    }
+  }
+  option.value = JSON.stringify(json);
+  option.text = document.getElementById("geoName").value;
+  popupContainer.style.display = "none";
+  document.getElementById("file").options.add(option,file.options.length-1);
+  document.getElementById("file").selectedIndex = document.getElementById("file").selectedIndex-1;
+  addlay(JSON.parse(option.value).features[0].geometry.coordinates[0],map,option.text+"_d--_a--_tx--_ty--_c#00f","#00f");
+}
+
+//checks if string is empty and prints an error if it is
+function empty(field){
+    return field.value=="";
+}
+
+function printError(message){
+    var errorMessage = document.getElementById('error-message');
+  errorMessage.innerText = message;
+  errorMessage.style.display = 'block';
+
+  setTimeout(function() {
+    errorMessage.style.display = 'none';
+  }, 3000); // Display for 3 seconds (3000 milliseconds)
+}
+
+function useSattellite() {
+     // map.setStyle('mapbox://styles/mapbox/streets-v11'); // Switch to map view
+      //map.setStyle('mapbox://styles/mapbox/satellite-v9'); // Switch to satellite view
+      map.setStyle('mapbox://styles/mapbox/satellite-streets-v11');
+  }
+  function toggleTutorial() {
+    if (document.getElementById('infoPopup').style.display=='block'){
+        document.getElementById('infoPopup').style.display = 'none';
+    }
+    else{
+        document.getElementById('infoPopup').style.display = 'block'; 
+    }
+    }
+
+    function closeTutorial() {
+      document.getElementById('infoPopup').style.display = 'none';
+    }
+    
+    
+function copy(event){
+    var index = event.target.parentNode.parentNode.rowIndex-1;
+    console.log(window.layers[index].source.data.geometry.coordinates.length/324);
+    var jsonString = JSON.stringify(example).substring(0,110)+JSON.stringify(window.layers[index].source.data.geometry.coordinates)+JSON.stringify(example).substring(147)
+    navigator.clipboard.writeText(jsonString)
+      .then(function() {
+        
+      })
+      .catch(function(error) {
+        printError("Unable to Copy to Clip Board")
+      });
+}
+</script>
+ 
+</body>
+</html>
