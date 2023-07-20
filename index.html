@@ -6,109 +6,36 @@
 <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
 <link rel="icon" type="image/png" href="TCTLOGO.png" sizes="32x32" />
 
+
 <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
-<script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>-
+<script src="https://unpkg.com/mapbox-gl@latest/dist/mapbox-gl.js"></script>
+<link rel="stylesheet" href="styling.css">
+
+
 <script src = "allgeo.js"></script>
 <script src = "Algo.js"></script>
 <script src = "MapFunctions.js"></script>
 
-<style>
-body { margin: 0; padding: 0; }
-#map { position: absolute; top: 0; bottom: 0; width: 100%; }
-#commands {
-        position: relative;
-        top: 0;
-        bottom: 0;
-        width: 100%;
-      }
-.popup-container {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 999;
-}
-
-.popup {
-  width: 400px;
-  height: 450px;
-  background-color: #fff;
-  padding: 10px;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-.buttons {
-  text-align: center;
-  margin-top: 5px;
-}
-#enterGeo {
-    width: 350px;
-    height: 300px;
-    resize: vertical;
-    resize: none;
-}
-#error-message {
-  display: none;
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: red;
-  color: white;
-  padding: 10px;
-  border-radius: 4px;
-}
-#infoButton {
-      position: fixed;
-      bottom: 30px;
-      right: 10px;
-      width: 55px;
-      height: 20px;
-      cursor: pointer;
-      z-index: 1000;
-      background-color: gray;
-      color: white;
-      font-size: medium;
-}
-#infoPopup {
-      display: none;
-      position: fixed;
-      bottom: 70px;
-      right: 10px;
-      width: 400px;
-      height: 300px;
-      background-color: white;
-      padding: 20px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
-      z-index: 1000;
-    }
-    #popupContent {
-      margin-bottom: 10px;
-    }
-
-</style>
-
 </head>
 <body>
     <div id="map">
+    </div>
+    <pre id="showWhere"></pre>
+      <pre id="lastPoint"></pre>
+      <pre id="lastClick"></pre>
         <div id = "commands">
-        <select id = file onchange = "addPopUp()"> 
+        <select id = file onchange = "addFilePopUp()"> 
+            <option value = "temp">keezer</option>
             <option value="create">Add GEOJSON</option>
         </select>
-        <label for="dist">Distance Threshold:</label>
+        <label for="dist">Distance Threshold (ft):</label>
         <input type="text" id="distance" name="distance"> 
         <label for="angle">Angle Threshold:</label>
         <input type="text" id="angle" name="angle"> 
-        <label for="translationX">translationX:</label>
+        <label for="translationX">translationX (ft):</label>
         <input type="text" id="translationX" name="translationX"> 
-        <label for="translationY">translationY:</label>
+        <label for="translationY">translationY (ft):</label>
         <input type="text" id="translationY" name="translationY"> 
         <label for="color">Color:</label>
         <select id = "color"> 
@@ -133,9 +60,9 @@ body { margin: 0; padding: 0; }
               <th>Remove</th>
               <th>Edit</th>
               <th>Copy</th>
+              <th>Select</th>
             </tr>
           </table> 
-    </div>
     <div id="error-message"></div>
     <div id="popupContainer" class="popup-container">
         <div class="popup">
@@ -146,8 +73,8 @@ body { margin: 0; padding: 0; }
             <label>Enter GEOJSON Data</label>
             <textarea id="enterGeo" name="enterGeo"></textarea>
           <div class="buttons">
-            <button id = "cancel" onclick="cancelPopup()">Cancel</button>
-            <button id = "submit" onclick="submitPopup()">Submit</button>
+            <button id = "cancel" onclick="cancelFilePopup()">Cancel</button>
+            <button id = "submit" onclick="submitFilePopup()">Submit</button>
           </div>
         </div>
       </div>
@@ -166,9 +93,26 @@ body { margin: 0; padding: 0; }
         </div>
       </div>
       <label id="infoButton" onclick="toggleTutorial()">Tutorial</label>
+    </div>
+    <div id="clickTogglePopup">
+          <button id = "multiSelect" onclick = "multiSelect()">Multi-Select</button>
+          <button id = "move" onclick = "move()">Move</button> 
+          <button id = "moveSelect" onclick = "moveSelect()">Select</button>
+          <button id = "moveMove" onclick = "moveMove()">Move</button>
+          <button id = "singleSelect" onclick = "singleClick()">Single-Select</button>
+          <button id = "nothing" onclick = "showClick()">Show Point</button>
+    </div>
+    <button id = "clickToggle" onclick = "promptClickToggle()">toggle</button>
+    <button id = "undo" onclick = "undoRemove()">Undo Remove</button>
+    <button id = "undoMove" onclick = "undoMove()">Undo Move</button>
+    <button id = "removeAll" onclick = "removeAllSelectedPoints()">Remove Selected</button>
 </div>
 
 <script>
+
+
+
+  //import mapboxgl from 'mapbox-gl';
 
 //set up the mapbox map
 mapboxgl.accessToken = 'pk.eyJ1Ijoic2FtYXJudyIsImEiOiJjbGl1c2F1dDAwOW02M3BueTJwdDViNHY4In0.5F8W4nYLQk7H0xjRONCGkw';
@@ -176,76 +120,191 @@ const map = new mapboxgl.Map({
     container: 'map', // container ID
     // Choose from Mapbox's core styles, or make your own style with Mapbox Studio
     style: 'mapbox://styles/mapbox/streets-v12', // style URL
-    center: [-70.05, 41.99], // starting position [lng, lat]
-    zoom: 15 // starting zoom
+    center: [-70.053, 41.9897], // starting position [lng, lat]
+    zoom: 20 // starting zoom
 });
 
-//put the table and the text fields above the map so they're visible
-document.getElementById('map').style.zIndex = '0';
-document.getElementById('commands').style.zIndex = '999';
-document.getElementById('datatable').style.zIndex = '1000';
-document.getElementById('error-message').style.zIndex = '1001';
 
-//function to give an array with the values of the textfields
-function gatherFields(){
-    //ensure valid entries
-    if (document.getElementById("distance").value=="" || isNaN(document.getElementById("distance").value)){
-        printError("Distance Threshold: is not valid");
-        return new Array(0);
-    }
-    if (document.getElementById("angle").value=="" || isNaN(document.getElementById("angle").value)){
-        printError("Angle Threshold: is not valid");
-        return new Array(0);
-    }
-    if (document.getElementById("translationX").value=="" || isNaN(document.getElementById("translationX").value)){
-        printError("translation x: is not valid");
-        return new Array(0);
-    }
-    if (document.getElementById("translationY").value==""  || isNaN(document.getElementById("translationY").value)){
-        printError("translation x: is not valid");
-        return new Array(0);
-    }
-    var fields = new Array(6);
-    fields[0] = document.getElementById('distance').value
-    fields[1] = document.getElementById('angle').value;
-    fields[2] = document.getElementById('translationX').value;
-    fields[3] = document.getElementById('translationY').value;
-    fields[4] = document.getElementById('color').value;
-    fields[5] = document.getElementById("file").value;
-    var drop = document.getElementById("file");
-    var fileName = drop.options[drop.selectedIndex].textContent;
-    fields[6] = fileName+"_d"+fields[0]+"_a"+fields[1]+"_tx"+fields[2]+"_ty"+fields[3]+"_c"+fields[4];
-    return fields;
-}
+//put the table and the text fields above the map so they're visible
+
+document.getElementById('commands').style.zIndex = '1';
+document.getElementById('error-message').style.zIndex = '1';
+document.getElementById('showWhere').style.zIndex = '1';
+document.getElementById('lastClick').style.zIndex = '1';
+document.getElementById('lastPoint').style.zIndex = '1';
+
+
+//give the keezer dropdown option the value of the keezer geojson
+var dropdown = document.getElementById("file");
+dropdown.options[0].value = JSON.stringify(keezer);
+
+document.addEventListener('click', (event) => {
+    const cursorX = event.clientX;
+    const cursorY = event.clientY;
+    console.log(cursorX);
+    console.log(cursorY);
+});
+
 
 
 //initiate the map once its loaded
-document.getElementById("change").style.display = "none";
-var dropdown = document.getElementById("file");
-var option = document.createElement("option");
-option.text = "keezer";
-option.value = JSON.stringify(keezer);
-dropdown.options.add(option,dropdown.options.length-1);
-//var option2 = document.createElement("option");
-//option2.text = "twine";
-//option2.value = JSON.stringify(twine);
-//file.options.add(option2,file.options.length-1);
-//file.options.add(option2,file.options.length-1);
-dropdown.selectedIndex = 0;
 map.on('load', function() {
+  
     setUpTrails(map);
+    selected = layers[0];
+    selectedIndex=0;
 }
 );
+
+//method to show the location of the mouse
+map.on('mousemove', (e) => {
+  const lng = e.lngLat.lng.toFixed(6); // Round the longitude to 6 decimal places
+  const lat = e.lngLat.lat.toFixed(6); // Round the latitude to 6 decimal places
+  document.getElementById('showWhere').innerHTML = `Mouse : {${lng}, ${lat}}`;
+});
+
+map.on('drag', () => {
+  removeShowPoint(map)
+});
+
+map.on('wheel', () => {
+  removeShowPoint(map)
+});
+
+document.addEventListener('keydown', function (event) {
+      if ((event.metaKey || event.ctrlKey) && event.keyCode === 90) {
+          undoRemove();
+      }
+    });
+
+
+//tells the map how to handle a click
+map.on('click', function(e){
+  if (document.getElementById('datatable').rows[selectedIndex+1].cells[5].textContent=="Show"){
+    return;
+  }
+
+
+
+  var x = round(map.unproject(e.point).lng,6);
+ var y = round(map.unproject(e.point).lat,6);
+ var point = [round(map.unproject(e.point).lng,6),round(map.unproject(e.point).lat,6)];
+ document.getElementById('lastClick').innerHTML = `Click: {${point[0]}, ${point[1]}}`;
+ var closest = findClosestPoint(selected.source.data.geometry.coordinates,point);
+
+  if (map.getLayer("id") && map.getSource("id")){
+  map.removeLayer("id");
+  map.removeSource("id");
+ }
+  addClickPoint(point,map,"blue");
+
+  //For a single-Select mode click
+  if (clickOption==0){
+  if (selected==null){
+    return;
+  }
+  
+ //get the selected layer and find the closest point to where the click was and remove it
+  removePoint(closest,selectedIndex);
+  }
+
+//for a multi-select mode click
+if (clickOption ==1){
+  if (selected==null){
+    return
+  }
+
+  if (selectedPoints.indexOf(closest)>-1){
+    map.setPaintProperty(closest[0]+","+closest[1], 'circle-radius', [
+                  'interpolate',
+                  ['linear'],
+                  ['zoom'],
+                  15, .5, 
+                  16, 1,
+                  17.5,2.5
+                ]);
+    selectedPoints.splice(selectedPoints.indexOf(closest),1)
+  }
+  else{
+     map.setPaintProperty(closest[0]+","+closest[1], 'circle-radius', 4);
+  selectedPoints.push(closest);
+  }
+ 
+}
+
+
+//for a move click
+if (clickOption ==2){
+  if (moveOption ==1){
+    var moveIndex = moveInd(movePoint);
+    if (moveIndex>-1){
+        movedPoints[selectedIndex][moveIndex].splice(1,1,point)
+    }
+    else{
+      movedPoints[selectedIndex].push([movePoint,point])
+    }
+      var coords = layers[selectedIndex].source.data.geometry.coordinates;
+      removeAllPoints(coords,map);
+      coords.splice(coords.indexOf(movePoint),1,point);
+      layers[selectedIndex].source.data.geometry.coordinates =coords;
+      selected = layers[selectedIndex];
+      map.removeLayer(selected.id);
+      map.removeSource(selected.id);  
+      map.addLayer(selected); 
+      addAllPoints(coords,map);
+      moveOption =0;
+      document.getElementById("moveSelect").style.backgroundColor = "gray";
+      document.getElementById("moveMove").style.backgroundColor = 'rgb(233, 233, 237)';
+      movePoint = null;
+  }
+  else{
+    if (movePoint ==closest){
+      removeMovePoint(map)
+      movePoint = null;
+      return;
+    }
+    else{
+      removeMovePoint(map)
+      map.setPaintProperty(closest[0]+","+closest[1], 'circle-radius', 4);
+      movePoint = closest;
+    }
+    moveOption =1;
+    document.getElementById("moveSelect").style.backgroundColor = 'rgb(233, 233, 237)';
+      document.getElementById("moveMove").style.backgroundColor = "gray";
+  }
+}
+
+//for show point
+if (clickOption ==3){
+  //console.log(movedPoints)
+  console.log(movedPoints[selectedIndex])
+  removeShowPoint(map);
+  showPoint = closest;
+  map.setPaintProperty(closest[0]+","+closest[1], 'circle-radius', 4);
+
+  document.getElementById("lastPoint").style.display = 'block';
+  document.getElementById('lastPoint').innerHTML = `{ ${round(closest[0],6)}, ${round(closest[1],6)} }`;
+  var pos = map.project(new mapboxgl.LngLat(closest[0], closest[1]));
+  document.getElementById('lastPoint').style.left = `${pos.x-80}px`; // Add an offset for better visibility
+  document.getElementById('lastPoint').style.top = `${pos.y -35}px`; // Add an offset for better visibility
+  
+}
+});
+
+//const lng = e.lngLat.lng.toFixed(6); // Round the longitude to 6 decimal places
+//const lat = e.lngLat.lat.toFixed(6); // Round the latitude to 6 decimal places
 
 //function for when they enter a new trail modification
 function createNew(){
     var fields = gatherFields();
+    //if the entries were not valid gatherFields return a length 0 array
     if (fields.length ==0){
         return;
     }
+    //check to see if name exists aka if the trail already exists
     if (validEnter(fields[6])){
-        addlay(translate(fields[2],fields[3],reduce(JSON.parse(fields[5]),fields[1],fields[0])),map,fields[6],fields[4]);
-    }
+        addlay(translate(fields[2],fields[3],reduce(JSON.parse(fields[5]).features[0].geometry.coordinates[0],fields[1],fields[0])),map,fields[6],fields[4]);
+     }
     else{
         printError("This trail modifcation already exists");
     }
@@ -254,35 +313,58 @@ function createNew(){
 //if any of the toggle buttons are pressed it goes here and the event tells
 //the function which button was pressed and that toggles is on or off
 function toggle(event){
+  removeShowPoint(map)
+  removeMovePoint(map);
     var layerId = event.target.id.substring(0, event.target.id.length - 3);
     if (event.target.innerHTML=="Show"){
         event.target.textContent = "Hide";
         map.setLayoutProperty(layerId, 'visibility', 'visible');
+        if (layerId == selected.id){
+          addAllPoints(layers[search(layerId)].source.data.geometry.coordinates,map);
+          
+        }
     }
     else{
         map.setLayoutProperty(layerId, 'visibility', 'none');
         event.target.textContent = "Show";
+        if (layerId == selected.id){
+          removeAllPoints(layers[search(layerId)].source.data.geometry.coordinates,map);
+        }
     }
 }
 
+
 function remove(event){
+  removeShowPoint(map)
+  removeMovePoint(map);
     var index = event.target.parentNode.parentNode.rowIndex-1;
     document.getElementById("datatable").deleteRow(index+1); //heading is 0th index
     map.removeLayer(layers[index].id);
     map.removeSource(layers[index].id);
+    var coords = layers[index].source.data.geometry.coordinates;
     layers.splice(index,1);
-    if (document.getElementById("change").style.display =="block"){
+    removedPoints.splice(index,1)
+    if (document.getElementById("change").style.display =="block" && curIndex == index){
         document.getElementById("change").style.display = "none";
+    }
+    if (index<curIndex){
+          curIndex-=1;
+    }
+    if (index ==selectedIndex){
+      removeAllPoints(coords,map);
+      selectedIndex=-1;
+      selected=null;
+      selectedPoints = new Array(0);
     }
 }
 
-//give it global scope so can do the change knowing the label.
-var curIndex;
+//if someone hits enter, this will bring back the original properties of 
+//to be changed layer to the fields and prompt a change button to 
+//make any edits
 function promptChange(event){
     curIndex = event.target.parentNode.parentNode.rowIndex-1;
     var curLayerId = layers[curIndex].id;
     document.getElementById("change").style.display = "block";
-
     var info = getInfo(curLayerId);
     document.getElementById("distance").value = info[2];
     document.getElementById("angle").value = info[3];
@@ -299,23 +381,68 @@ function promptChange(event){
 }
 
 function change(){
-    fields = gatherFields();
+  removeShowPoint(map)
+  removeMovePoint(map);
+    var fields = gatherFields();
+    var info = getInfo(fields[6]);
     document.getElementById("change").style.display = "none";
     if (fields.length==0){
-        return;
+        return; //if the text fields are invalid than fields is empty and end the method
     }
     if (!validEnter(fields[6])){
         printError("This trail modifcation already exists");
         return;
     }
     document.getElementById("change").style.display = "none";
+    //remove the layer to replace it with new edited one
     map.removeLayer(layers[curIndex].id);
-    map.removeSource(layers[curIndex].id);
-    layers.splice(curIndex,1,createLayerClass(translate(fields[2],fields[3],reduce(JSON.parse(fields[5]),fields[1],fields[0])),map,fields[6],fields[4]));
+    map.removeSource(layers[curIndex].id);   
+
+    //take the original coordinates of the file and remove the points that the user
+    //manually deleted and then run the algorithm with the changed thresholds and the original
+    //file without the manually deleted points. 
+    var changeTrans = [info[4].substring(0,info[4].indexOf("/")),info[4].substring(info[4].indexOf("/")+1)]
+    var coords = translate(changeTrans[0],changeTrans[1],JSON.parse(fields[5]).features[0].geometry.coordinates[0]);
+    for (var i =0; i<removedPoints[curIndex].length;i++){
+      //for each point find its occurence in the original coord array and get rid of it
+      if (get2DIndex(coords,removedPoints[curIndex][i])>-1){
+        coords.splice(get2DIndex(coords,removedPoints[curIndex][i]),1);
+    }
+  }
+    
+    for (var i=0; i<movedPoints[curIndex].length; i++){
+      if (get2DIndex(removedPoints[curIndex],movedPoints[curIndex][i][1])!=-1){
+        coords.splice(get2DIndex(coords,movedPoints[curIndex][i][0]),1);
+      }
+      if (get2DIndex(coords,movedPoints[curIndex][i][0])!=-1){
+        console.log(movedPoints[curIndex][i][0])
+        console.log(get2DIndex(coords,movedPoints[curIndex][i][0]))
+        coords.splice(get2DIndex(coords,movedPoints[curIndex][i][0]),1,movedPoints[curIndex][i][1])
+      }
+    }
+
+
+
+    //if the changed one is currently selected then we need to remove and re add the points
+    if (curIndex == selectedIndex){
+      removeAllPoints(layers[curIndex].source.data.geometry.coordinates,map);
+  }
+
+    //replace the layer with the edited layer
+    layers.splice(curIndex,1,createLayerClass(translate(fields[2]-changeTrans[0],fields[3]-changeTrans[1],reduce(coords,fields[1],fields[0])),map,fields[6],fields[4]));
     map.addLayer(layers[curIndex]);
-    var info = getInfo(fields[6]);
+    
+    //now coords is the coordinates of the new layer
+    coords = layers[curIndex].source.data.geometry.coordinates;
+    //if the changed one is selected than change the value of selected to the new geoJSON layer
+    //and add the points to the map of its coordinates.
+    if (curIndex == selectedIndex){
+      selected = layers[selectedIndex];
+      addAllPoints(coords,map)
+    }
+    //redo the table row with the new values and ids
     var row = document.getElementById("datatable").rows[curIndex+1];
-    for (var i =0; i<9; i++){
+    for (var i =0; i<10; i++){
         if (i<5){
             row.cells[i].innerHTML = info[i];
             row.cells[i].style.color = info[5];
@@ -328,10 +455,59 @@ function change(){
     row.cells[6].querySelector("button").id = fields[6]+"rem";
     row.cells[7].querySelector("button").id = fields[6]+"edit";
     row.cells[8].querySelector("button").id = fields[6]+"copy";
+    row.cells[9].querySelector("button").id = fields[6]+"sel";
+
+    selectedPoints = new Array(0)
+
 }
 
 
-function addPopUp() {
+function copy(event){
+    var index = event.target.parentNode.parentNode.rowIndex-1;
+
+    var jsonString = JSON.stringify(example).substring(0,110)+JSON.stringify(layers[index].source.data.geometry.coordinates)+JSON.stringify(example).substring(147)
+    navigator.clipboard.writeText(jsonString)
+      .then(function() {
+        
+      })
+      .catch(function(error) {
+        printError("Unable to Copy to Clip Board")
+      });
+}
+
+//function to change which trail is selected
+function changeSelected(event){
+  removeShowPoint(map)
+  removeMovePoint(map);
+  selectedPoints = new Array(0);
+  if (event.target.textContent == "Select"){
+  var layerId = event.target.id.substring(0, event.target.id.length - 3);
+  var layerIndex = search(layerId);
+  var layer = layers[layerIndex];
+  if (selected!=null){
+  var coords = selected.source.data.geometry.coordinates;
+  document.getElementById("datatable").rows[selectedIndex+1].cells[9].querySelector("button").textContent = "Select";
+  removeAllPoints(coords,map);
+  }
+  selected = layer;
+  selectedIndex = layerIndex;
+  document.getElementById("datatable").rows[layerIndex+1].cells[9].querySelector("button").textContent = "Unselect";
+  coords = selected.source.data.geometry.coordinates;
+  addAllPoints(coords,map)
+}
+else{
+  var coords = selected.source.data.geometry.coordinates;
+  removeAllPoints(coords,map)
+  document.getElementById("datatable").rows[selectedIndex+1].cells[9].querySelector("button").textContent = "Select";
+  selectedIndex =-1;
+  selected = null;
+}
+}
+
+
+
+
+function addFilePopUp() {
     if (document.getElementById("file").value != "create"){
         return;
     }
@@ -340,12 +516,12 @@ function addPopUp() {
   var input = document.getElementById("enterGeo");
 }
 
-function cancelPopup() {
+function cancelFilePopup() {
   document.getElementById("popupContainer").style.display = "none";
   document.getElementById("file").selectedIndex=0;
 }
 
-function submitPopup() {
+function submitFilePopup() {
   var popupContainer = document.getElementById("popupContainer");
   if (document.getElementById("geoName").value==""){
     printError("Enter Name: is empty");
@@ -376,29 +552,16 @@ function submitPopup() {
   popupContainer.style.display = "none";
   document.getElementById("file").options.add(option,file.options.length-1);
   document.getElementById("file").selectedIndex = document.getElementById("file").selectedIndex-1;
-  addlay(JSON.parse(option.value).features[0].geometry.coordinates[0],map,option.text+"_d--_a--_tx--_ty--_c#00f","#00f");
+  addlay(roundCoords(JSON.parse(option.value).features[0].geometry.coordinates[0],6),map,option.text+"_d--_a--_tx--_ty--_c#00f","#00f");
 }
 
-//checks if string is empty and prints an error if it is
-function empty(field){
-    return field.value=="";
-}
-
-function printError(message){
-    var errorMessage = document.getElementById('error-message');
-  errorMessage.innerText = message;
-  errorMessage.style.display = 'block';
-
-  setTimeout(function() {
-    errorMessage.style.display = 'none';
-  }, 3000); // Display for 3 seconds (3000 milliseconds)
-}
 
 function useSattellite() {
      // map.setStyle('mapbox://styles/mapbox/streets-v11'); // Switch to map view
       //map.setStyle('mapbox://styles/mapbox/satellite-v9'); // Switch to satellite view
       map.setStyle('mapbox://styles/mapbox/satellite-streets-v11');
   }
+
   function toggleTutorial() {
     if (document.getElementById('infoPopup').style.display=='block'){
         document.getElementById('infoPopup').style.display = 'none';
@@ -410,21 +573,196 @@ function useSattellite() {
 
     function closeTutorial() {
       document.getElementById('infoPopup').style.display = 'none';
-    }
-    
-    
-function copy(event){
-    var index = event.target.parentNode.parentNode.rowIndex-1;
-    console.log(window.layers[index].source.data.geometry.coordinates.length/324);
-    var jsonString = JSON.stringify(example).substring(0,110)+JSON.stringify(window.layers[index].source.data.geometry.coordinates)+JSON.stringify(example).substring(147)
-    navigator.clipboard.writeText(jsonString)
-      .then(function() {
-        
-      })
-      .catch(function(error) {
-        printError("Unable to Copy to Clip Board")
-      });
 }
+    
+    
+function promptClickToggle(){
+    if (document.getElementById('clickTogglePopup').style.display=='block'){
+        document.getElementById('clickTogglePopup').style.display = 'none';
+    }
+    else{
+        document.getElementById('clickTogglePopup').style.display = 'block'; 
+    }
+}
+
+function singleClick(){
+  if (clickOption ==1){
+    selectedPoints = new Array(0);
+    document.getElementById("removeAll").style.display = 'none';
+  }
+  removeShowPoint(map)
+  removeMovePoint(map);
+  
+  clickOption = 0;
+  document.getElementById("singleSelect").style.backgroundColor = "gray";
+  document.getElementById("multiSelect").style.backgroundColor = 'rgb(233, 233, 237)';
+  document.getElementById("move").style.backgroundColor = 'rgb(233, 233, 237)';
+  document.getElementById("nothing").style.backgroundColor = 'rgb(233, 233, 237)';
+  document.getElementById("lastPoint").style.display = 'none';
+  document.getElementById("move").style.display = 'block';
+  document.getElementById("moveSelect").style.display = 'none';
+  document.getElementById("moveMove").style.display = 'none';
+}
+
+function multiSelect(){
+  removeShowPoint(map)
+  removeMovePoint(map);
+  document.getElementById("removeAll").style.display = 'block';
+  clickOption = 1;
+  document.getElementById("singleSelect").style.backgroundColor = 'rgb(233, 233, 237)';
+  document.getElementById("multiSelect").style.backgroundColor = "gray";
+  document.getElementById("move").style.backgroundColor = 'rgb(233, 233, 237)';
+  document.getElementById("nothing").style.backgroundColor = 'rgb(233, 233, 237)';
+  document.getElementById("lastPoint").style.display = 'none';
+  document.getElementById("move").style.display = 'block';
+  document.getElementById("moveSelect").style.display = 'none';
+  document.getElementById("moveMove").style.display = 'none';
+}
+
+function move(){
+  map.getCanvas().style.cursor = 'crosshair';
+  map.getCanvas().style.cursor 
+  removeShowPoint(map)
+  if (clickOption ==1){
+    selectedPoints = new Array(0);
+    document.getElementById("removeAll").style.display = 'none';
+  }
+  clickOption =2;
+  moveOption =0;
+  document.getElementById("singleSelect").style.backgroundColor = 'rgb(233, 233, 237)';
+  document.getElementById("multiSelect").style.backgroundColor = 'rgb(233, 233, 237)';
+  document.getElementById("nothing").style.backgroundColor = 'rgb(233, 233, 237)';
+  document.getElementById("lastPoint").style.display = 'none';
+
+  document.getElementById("move").style.display = 'none';
+  document.getElementById("moveSelect").style.display = 'block';
+  document.getElementById("moveMove").style.display = 'block';
+  document.getElementById("moveSelect").style.backgroundColor = "gray";
+  document.getElementById("moveMove").style.backgroundColor = 'rgb(233, 233, 237)';
+}
+
+function showClick(){
+  removeMovePoint(map);
+  if (clickOption ==1){
+    selectedPoints = new Array(0);
+    document.getElementById("removeAll").style.display = 'none';
+  }
+  clickOption = 3;
+  document.getElementById("singleSelect").style.backgroundColor = 'rgb(233, 233, 237)';
+  document.getElementById("multiSelect").style.backgroundColor ='rgb(233, 233, 237)';
+  document.getElementById("move").style.backgroundColor = 'rgb(233, 233, 237)';
+  document.getElementById("nothing").style.backgroundColor = "gray";
+    document.getElementById("move").style.display = 'block';
+  document.getElementById("moveSelect").style.display = 'none';
+  document.getElementById("moveMove").style.display = 'none';
+}
+
+function moveMove(){
+  if (movePoint ==null){
+    printError("No Point Selected To Move");
+    return;
+  }
+  document.getElementById("moveMove").style.backgroundColor = "gray";
+  document.getElementById("moveSelect").style.backgroundColor = 'rgb(233, 233, 237)';
+  moveOption =1;
+}
+
+function moveSelect(){
+  document.getElementById("moveSelect").style.backgroundColor = "gray";
+  document.getElementById("moveMove").style.backgroundColor = 'rgb(233, 233, 237)';
+  moveOption =0;
+
+}
+
+function undoRemove(){
+  if (removedPoints[selectedIndex].length ==0){
+    printError("No removed points in selected trail");
+    return;
+  }
+  //console.log(movedPoints[selectedIndex])
+  var point = removedPoints[selectedIndex][removedPoints[selectedIndex].length-1];
+  
+  //console.log(movedPoints[selectedIndex])
+  var info = getInfo(selected.id);
+  var fileName = info[1];
+  var file;
+  for (var i=0; i<document.getElementById("file").options.length; i++){
+    if (document.getElementById("file").options[i].textContent==fileName){
+      file = JSON.parse(document.getElementById("file").options[i].value);
+    }
+  }
+  var changeTrans = [info[4].substring(0,info[4].indexOf("/")),info[4].substring(info[4].indexOf("/")+1)]
+  if (changeTrans[0]=="--"){
+    changeTrans=[0,0]
+  }
+  coords = translate(changeTrans[0],changeTrans[1],file.features[0].geometry.coordinates[0]);
+  var originalIndex = get2DIndex(coords,point)
+
+  console.log(originalIndex)
+  var addIndex=0;
+  var x=0;
+  var curCoords = selected.source.data.geometry.coordinates;
+  for (var i = originalIndex; i>=0; i--){
+    for (var j=0; j<curCoords.length;j++){
+      if (curCoords[j][0]==coords[i][0] && curCoords[j][1]==coords[i][1]){
+        addIndex++;
+        break;
+      }
+    }
+    for (var j=0; j<movedPoints[selectedIndex].length; j++){
+      console.log("hi")
+      console.log(get2DIndex(removedpoints[selectedIndex],movedPoints[selectedIndex][j][1]))
+      if (get2DIndex(removedpoints[selectedIndex],movedPoints[selectedIndex][j][1])>-1){
+          if (get2DIndexOf(coords,movedPoints[selectedIndex][j][0])<get2DIndexOf(coords,point)){
+            addIndex++;
+            break;
+          }
+      }
+    }
+  }
+  removedPoints[selectedIndex].splice(removedPoints[selectedIndex].length-1);
+  removeAllPoints(curCoords,map);
+  curCoords.splice(addIndex,0,point);
+  selected.source.data.geometry.coordinates = curCoords;
+  layers[selectedIndex] = selected;
+  map.removeLayer(selected.id);
+    map.removeSource(selected.id);  
+    map.addLayer(selected);
+    addAllPoints(curCoords,map)
+}
+
+function undoMove(){
+  if (movedPoints[selectedIndex].length ==0){
+    printError("No moved points in selected trail");
+    return;
+  }
+  var coords = selected.source.data.geometry.coordinates;
+  removeAllPoints(coords,map);
+  var points = movedPoints[selectedIndex][movedPoints[selectedIndex].length-1];
+  coords.splice(get2DIndex(coords,points[1]),1,points[0])
+  movedPoints[selectedIndex].splice(movedPoints[selectedIndex].length-1,1)
+  selected.source.data.geometry.coordinates = coords;
+  layers[selectedIndex] = selected;
+  layers[selectedIndex] = selected;
+  map.removeLayer(selected.id);
+    map.removeSource(selected.id);  
+    map.addLayer(selected);
+    addAllPoints(coords,map)
+
+}
+
+
+//helper function to print an error message
+function printError(message){
+    var errorMessage = document.getElementById('error-message');
+  errorMessage.innerText = message;
+  errorMessage.style.display = 'block';
+
+  setTimeout(function() {
+    errorMessage.style.display = 'none';
+  }, 3000); // Display for 3 seconds (3000 milliseconds)
+}
+
 </script>
  
 </body>
