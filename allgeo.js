@@ -23,85 +23,35 @@ var example = {"type":"FeatureCollection", "features":[
 ]},"properties":{}}
 ]}
 
-/*
-{"type":"FeatureCollection", "features":[
-    {"type":"Feature","geometry":{"type":"MultiLineString","coordinates":[[[41.98546, -70.03017], 
-[41.98588, -70.03012], 
-[41.98617, -70.03009], 
-[41.98623, -70.03011], 
-[41.98629, -70.02996], 
-[41.98683, -70.02931], 
-[41.98701, -70.02916], 
-[41.98716, -70.02908], 
-[41.98707, -70.0288], 
-[41.98681, -70.0285], 
-[41.98629, -70.02801], 
-[41.98623, -70.02787], 
-[41.98621, -70.0277], 
-[41.98611, -70.02743], 
-[41.98599, -70.02728], 
-[41.98588, -70.02718], 
-[41.98584, -70.02709], 
-[41.98582, -70.02693], 
-[41.98584, -70.0267], 
-[41.9859, -70.02655], 
-[41.98606, -70.02622], 
-[41.98649, -70.02493], 
-[41.98669, -70.02412], 
-[41.98674, -70.0238], 
-[41.98675, -70.0235], 
-[41.9867, -70.02328], 
-[41.98654, -70.02289], 
-[41.98638, -70.02259], 
-[41.98634, -70.0224], 
-[41.98634, -70.02228], 
-[41.98634, -70.02227], 
-[41.98639, -70.022], 
-[41.98681, -70.02024], 
-[41.98687, -70.01992], 
-[41.98615, -70.01955], 
-[41.98589, -70.01937], 
-[41.9853, -70.0187], 
-[41.98485, -70.01835], 
-[41.98467, -70.01815], 
-[41.9846, -70.01791], 
-[41.98443, -70.01808], 
-[41.98419, -70.01827], 
-[41.98409, -70.01839], 
-[41.98396, -70.0186], 
-[41.98366, -70.0193], 
-[41.9836, -70.01963], 
-[41.9835, -70.01993], 
-[41.98346, -70.0201], 
-[41.98346, -70.02032]]]},"properties":{}}
-]}
-*/
-
 
 
 
     //store the layers and corresponding toggles array in this file but change 
     //them with functions defined in Algo.js
     var layers = new Array(0);
-    var removedPoints = new Array(0);
-    var movedPoints = new Array(0);
+    var states = new Array(0);
     var selectedIndex =0;
     var selected =null;
     var selectedPoints = new Array(0);
-    var clickOption =3;
+    var clickOption =4;
     var curIndex;
     var showedPoint = null;
     var movePoint = null;
+    var addBeforePoint = null;
     var moveOption;
+    var addOption;
+    var undoIndex;
 
 //export variables to be able to be used in algo.js
 window.layers = layers;
 window.keezer = keezer;
-window.removedPoints = removedPoints;
-window.movedPoints = movedPoints;
+window.states = states;
 window.selected = selected;
 window.selectedIndex = selectedIndex;
 window.selectedPoints = selectedPoints;
 window.showPoint = showedPoint;
 window.movePoint = movePoint;
+window.addBeforePoint = addBeforePoint;
 window.moveOption = moveOption;
+window.addOption = addOption;
+window.undoIndex = undoIndex;
