@@ -60,6 +60,17 @@ body { margin: 0;
         transform: translate(-50%, -50%);
         z-index: 1002;
       }
+      #tagPopup{
+        width: 200px;
+        height: 50px;
+        background-color: #fff;
+        padding: 10px;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 1002;
+      }
       
       #nestedMap {
         position: relative;
@@ -184,7 +195,7 @@ color: "white";
       bottom: 60px;
       left: 10px;
       width: 90px;
-      height: 160px;
+      height: 190px;
       background-color: white;
       padding: 10px;
       border: 1px solid #ccc;
@@ -195,7 +206,7 @@ color: "white";
 #singleSelect{
   position: fixed;
       left: 15px;
-      bottom: 215px;
+      bottom: 245px;
       width: 100px;
       height: 20px;
       border: 1px solid #ccc;
@@ -203,14 +214,14 @@ color: "white";
 #multiSelect{
   position: fixed;
       left: 15px;
-      bottom: 185px;
+      bottom: 215px;
       width: 100px;
       height: 20px;
       border: 1px solid #ccc;
 }
 #move{
   position: fixed;
-  bottom: 155px;
+  bottom: 185px;
       left: 15px;
       width: 100px;
       height: 20px;
@@ -219,7 +230,7 @@ color: "white";
 #moveSelect{
     display: none;
     position: fixed;
-    bottom: 155px;
+    bottom: 185px;
         left: 15px;
         width: 48px;
         height: 20px;
@@ -228,7 +239,7 @@ color: "white";
   #moveMove{
     display: none;
     position: fixed;
-    bottom: 155px;
+    bottom: 185px;
         left: 68px;
         width: 48px;
         height: 20px;
@@ -237,7 +248,7 @@ color: "white";
   #addSelect{
     display: none;
     position: fixed;
-    bottom: 95px;
+    bottom: 125px;
         left: 15px;
         width: 48px;
         height: 20px;
@@ -246,7 +257,7 @@ color: "white";
   #addAdd{
     display: none;
     position: fixed;
-    bottom: 95px;
+    bottom: 125px;
         left: 68px;
         width: 48px;
         height: 20px;
@@ -254,7 +265,7 @@ color: "white";
   }
   #merge{
     position: fixed;
-  bottom: 125px;
+  bottom: 155px;
       left: 15px;
       width: 100px;
       height: 20px;
@@ -262,7 +273,7 @@ color: "white";
   }
   #add{
     position: fixed;
-  bottom: 95px;
+  bottom: 125px;
       left: 15px;
       width: 100px;
       height: 20px;
@@ -276,6 +287,14 @@ color: "white";
       height: 20px;
       border: 1px solid #ccc;
       background-color: gray;
+}
+#addTag{
+    position: fixed;
+      left: 15px;
+      bottom: 95px;
+      width: 100px;
+      height: 20px;
+      border: 1px solid #ccc;
 }
 #removeAll{
   display: none;
@@ -323,17 +342,20 @@ color: "white";
   #versionsTable{
     z-index:2;
 }
+
   #showVersions {
     display: none;
         text-align: center;
+        overflow: auto;
       position: absolute;
       bottom: 90px;
       right: 10px;
       min-height: 150px;
+      max-height: 300px;
       width: 150px;
       height: auto;
       background-color: white;
-      padding: 5px 10px;
+      padding: 5px 5px;
       border: 1px solid #ccc;
       border-radius: 5px;
       box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
