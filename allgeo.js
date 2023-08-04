@@ -30,6 +30,7 @@ var example = {"type":"FeatureCollection", "features":[
     //them with functions defined in Algo.js
     var layers = new Array(0);
     var states = new Array(0);
+    var tagStates = new Array(0)
     var selectedIndex =0;
     var selected =null;
     var selectedPoints = new Array(0);
@@ -41,6 +42,7 @@ var example = {"type":"FeatureCollection", "features":[
     var moveOption;
     var addOption;
     var undoIndex;
+    var tags = new Array(0);
 
 //export variables to be able to be used in algo.js
 window.layers = layers;
@@ -55,3 +57,4 @@ window.addBeforePoint = addBeforePoint;
 window.moveOption = moveOption;
 window.addOption = addOption;
 window.undoIndex = undoIndex;
+window.tags = tags;

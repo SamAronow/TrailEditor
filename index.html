@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Work</title>
+<title>Trail-Editor</title>
 <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
 </head>
 <link rel="icon" type="image/png" href="TCTLOGO.png" sizes="32x32" />
@@ -87,7 +87,6 @@
       <div id="infoPopup">
         <button class="close-button" id ="versionsInfo" onclick = "toggleTutorial()">&times;</button>
         <div id="popupContent">
-          <h2>Tutorial</h2>
           <p>Use this to modify trails. Use the distance and angle thresholds to modify the trails such that for every 
             coordinate in the trail, if it is closer than your distance threshold (in degrees of latitude and longitude) 
             and the angle formed by the point and the one before and after is greater than the angle threshold (in radians)
@@ -112,12 +111,13 @@
           <button id = "add" onclick = "add()" >Add</button>
           <button id = "addSelect" onclick = "addSelect()">Select</button>
           <button id = "addAdd" onclick = "addAdd()">Add</button>
+          <button id = "addTag" onclick = "addTag()">Tag</button>
     </div>
-    <button id = "clickToggle" onclick = "promptClickToggle()">toggle</button>
+    <button id = "clickToggle" onclick = "promptClickToggle()">Menu</button>
     <button id = "undo" onclick = "openHistory()">Undo</button>
     <button id = "removeAll" onclick = "removeAllSelectedPoints()">Remove Selected</button>
     <button id = "addEnd" onclick = "addEnd()">Current: Add After</button>
-    <div id = showVersions>
+    <div class = "scrollable-div" id = showVersions>
       <table id = "versionsTable">
         <tr>
           <th>
@@ -125,8 +125,15 @@
           </th>
         </tr>
       </table>
-      <button class="close-button" id ="versionsInfo" onclick = "closeHistory()">&times;</button>
+      <button class="close-button" id ="versionsClose" onclick = "closeHistory()">&times;</button>
     </div>
+    <div id="tagPopupContainer" class="popup-container">
+      <div class="popup" id ="tagPopup">
+        <div>Enter Tag:</div>
+        <input type="text" id="tagEnter" name="tagEnter">
+      <button class="close-button" id ="closePreview" onclick = "closeTag()">&times;</button>
+        </div>
+        </div>
     <div id="versionPopupContainer" class="popup-container">
       <div class="popup" id ="previewPopup">
         <div id = "versionNumber">
@@ -172,6 +179,7 @@ dropdown.options[0].value = JSON.stringify(keezer);
 
 function handleArrowKeys(event) {
       if (event.key === 'ArrowUp' || event.key === 'ArrowRight') {
+        console.log(tagStates)
         if (document.getElementById("versionPopupContainer").style.display == 'block'){
             if (undoIndex+2==states[selectedIndex].length){
               printError("At latest version already")
@@ -214,6 +222,19 @@ function handleArrowKeys(event) {
     // Add an event listener for the 'keydown' event on the document
     document.addEventListener('keydown', handleArrowKeys);
 
+    document.addEventListener('keydown', handleEnter);
+    function handleEnter(){
+      if (event.key== 'Enter'){
+if (document.getElementById("tagPopupContainer").style.display != 'none'){
+        document.getElementById("tagPopupContainer").style.display = 'none'
+        tags[selectedIndex].push([tagPoint,document.getElementById("tagEnter").value])
+        tagStates[selectedIndex][tagStates[selectedIndex].length-1].push([tagPoint,document.getElementById("tagEnter").value])
+      }
+      }
+      
+    }
+    
+
 
 
 //initiate the map once its loaded
@@ -241,7 +262,7 @@ map.on('wheel', () => {
 });
 
 
-
+var tagPoint;
 //tells the map how to handle a click
 map.on('click', function(e){
   if (selected==null){
@@ -260,7 +281,6 @@ map.on('click', function(e){
  document.getElementById('lastClick').innerHTML = `Click: {${point[0]}, ${point[1]}}`;
  var closest = findClosestPoint(selected.source.data.geometry.coordinates,point);
  
-
 
   //For a single-Select mode click
   if (clickOption==0){
@@ -307,6 +327,11 @@ if (clickOption ==1){
 //for a move click
 if (clickOption ==2){
   if (moveOption ==1){
+    for (var j=0; j<window.tags[window.selectedIndex].length;j++){
+            if (window.tags[window.selectedIndex][j][0]==movePoint){
+                window.tags[window.selectedIndex][j][0]= point;
+            }
+          }
     var coords = new Array(0);
        for (var i=0; i<selected.source.data.geometry.coordinates.length; i++){
         coords.push(selected.source.data.geometry.coordinates[i])
@@ -324,7 +349,10 @@ if (clickOption ==2){
       document.getElementById("moveMove").style.backgroundColor = 'rgb(233, 233, 237)';
       movePoint = null;
       map.getCanvas().style.cursor = 'pointer';
+      console.log(tagStates)
       addState();
+      console.log(tagStates)
+
   }
   else{
     if (closest==null){
@@ -346,6 +374,7 @@ if (clickOption ==2){
       document.getElementById("moveMove").style.backgroundColor = "gray";
       map.getCanvas().style.cursor = 'crosshair';
   }
+
 }
 
 //for merge
@@ -381,6 +410,11 @@ if (clickOption==3){
     var i =get2DIndex(coords,selectedPoints[0])
     var j = get2DIndex(coords,selectedPoints[1])
     selectedPoints = new Array(0)
+    for (var k=0; k<window.tags[window.selectedIndex].length;k++){
+            if (window.tags[window.selectedIndex][k][0]==coords[i] || window.tags[window.selectedIndex][k][0]==coords[j]){
+                window.tags[window.selectedIndex][k][0]= point;
+            }
+          }
     if (Math.abs(i-j)<2){
       coords.splice(i,1,point)
     coords.splice(j,1)
@@ -466,6 +500,14 @@ if (clickOption ==4){
   
 }
 
+if (clickOption==6){
+  if (closest==null){
+  return;
+ }
+  document.getElementById("tagPopupContainer").style.display = 'block'
+  tagPoint= closest;
+}
+
 });
 
 //const lng = e.lngLat.lng.toFixed(6); // Round the longitude to 6 decimal places
@@ -530,6 +572,7 @@ function remove(event){
       selectedIndex=-1;
       selected=null;
       selectedPoints = new Array(0);
+      updateVersionDisplay()
     }
     if (index<selectedIndex){
       selectedIndex-=1;
@@ -539,8 +582,21 @@ function remove(event){
 
 function copy(event){
     var index = event.target.parentNode.parentNode.rowIndex-1;
+    /*var props="[";
+    for (var i=0;i<tags[index].length;i++){
+      props+="[["+tags[index]     "[[x,y],p]"
+    }*/
+    var linestring = {
+        "type": "Feature",
+        "geometry": {
+            "type": "LineString",
+            "coordinates": layers[index].source.data.geometry.coordinates
+        }
+    };
+    round(turf.lineDistance(linestring)*3280.84/5280,3);
+    var props = "Tags: "+JSON.stringify(tags[index])+", Miles: "+round(turf.lineDistance(linestring)*3280.84/5280,3)+", Version: "+states[index].length;
 
-    var jsonString = JSON.stringify(example).substring(0,110)+JSON.stringify(layers[index].source.data.geometry.coordinates)+JSON.stringify(example).substring(147)
+    var jsonString = JSON.stringify(example).substring(0,110)+JSON.stringify(layers[index].source.data.geometry.coordinates)+JSON.stringify(example).substring(147,164)+props+JSON.stringify(example).substring(164)
     navigator.clipboard.writeText(jsonString)
       .then(function() {
         
@@ -655,14 +711,16 @@ function openHistory(){
   }
 
   function updateVersionDisplay(){
-    if (selected==null){
-      return;
-    }
     var table = document.getElementById("versionsTable");
 
     // Remove all rows except the header row (index 0)
     while (table.rows.length > 1) {
       table.deleteRow(1);
+    }
+    console.log(table.rows)
+    if (selected==null){
+      console.log("nu")
+      return;
     }
 
     for (var i=0; i<states[selectedIndex].length-1; i++){
@@ -670,6 +728,7 @@ function openHistory(){
       var cell = newRow.insertCell();
       cell.innerHTML = "Version "+(i+1);
       cell.addEventListener("click", showPreview);
+      document.getElementById("showVersions").scrollTop = document.getElementById("showVersions").scrollHeight;
     }
   }
 
@@ -722,6 +781,7 @@ function singleClick(){
   document.getElementById("addAdd").style.display = 'none';
   document.getElementById("add").style.display = 'block';
   document.getElementById("addEnd").style.display = 'none';
+  document.getElementById("addTag").style.backgroundColor = 'rgb(233, 233, 237)'
 }
 
 function multiSelect(){
@@ -748,6 +808,7 @@ function multiSelect(){
 
   document.getElementById("add").style.display = 'block';
   document.getElementById("addEnd").style.display = 'none';
+  document.getElementById("addTag").style.backgroundColor = 'rgb(233, 233, 237)'
 }
 
 function move(){
@@ -776,6 +837,7 @@ function move(){
   document.getElementById("addAdd").style.display = 'none';
   document.getElementById("add").style.display = 'block';
   document.getElementById("addEnd").style.display = 'none';
+  document.getElementById("addTag").style.backgroundColor = 'rgb(233, 233, 237)'
 }
 
 function merge(){
@@ -801,6 +863,7 @@ function merge(){
   document.getElementById("add").style.display = 'block';
   document.getElementById("addEnd").style.display = 'none';
   clickOption =3;
+  document.getElementById("addTag").style.backgroundColor = 'rgb(233, 233, 237)'
 }
 
 function add(){
@@ -828,6 +891,7 @@ function add(){
   document.getElementById("addAdd").style.backgroundColor = 'rgb(233, 233, 237)';
   document.getElementById("addAdd").style.display = 'block';
   document.getElementById("addEnd").style.display = 'block';
+  document.getElementById("addTag").style.backgroundColor = 'rgb(233, 233, 237)'
 }
 
 
@@ -857,6 +921,34 @@ function addEnd(){
   }
 }
 
+function addTag(){
+  unselectAll();
+  map.getCanvas().style.cursor = 'pointer';
+  if (clickOption ==1){
+    selectedPoints = new Array(0);
+    document.getElementById("removeAll").style.display = 'none';
+  }
+  removeShowPoint(map)
+  removeMovePoint(map);
+  removeAddBeforePoint(map);
+  
+  clickOption = 6;
+  document.getElementById("singleSelect").style.backgroundColor = "rgb(233, 233, 237)";
+  document.getElementById("multiSelect").style.backgroundColor = 'rgb(233, 233, 237)';
+  document.getElementById("move").style.backgroundColor = 'rgb(233, 233, 237)';
+  document.getElementById("nothing").style.backgroundColor = 'rgb(233, 233, 237)';
+  document.getElementById("merge").style.backgroundColor = 'rgb(233, 233, 237)';
+  document.getElementById("lastPoint").style.display = 'none';
+  document.getElementById("move").style.display = 'block';
+  document.getElementById("moveSelect").style.display = 'none';
+  document.getElementById("moveMove").style.display = 'none';
+  document.getElementById("addSelect").style.display = 'none';
+  document.getElementById("addAdd").style.display = 'none';
+  document.getElementById("add").style.display = 'block';
+  document.getElementById("addEnd").style.display = 'none';
+  document.getElementById("addTag").style.backgroundColor = 'gray'
+}
+
 
 function showClick(){
   unselectAll();
@@ -880,6 +972,7 @@ function showClick(){
   document.getElementById("addAdd").style.display = 'none';
   document.getElementById("add").style.display = 'block';
   document.getElementById("addEnd").style.display = 'none';
+  document.getElementById("addTag").style.backgroundColor = 'rgb(233, 233, 237)'
 }
 
 
@@ -932,6 +1025,7 @@ function printError(message){
 
   var popup = document.getElementById('versionPopupContainer');
     var newMap;
+
     function showPreview(event) {
       var clickedRow = event.target.parentElement;
     undoIndex = Array.from(clickedRow.parentNode.children).indexOf(clickedRow)-1;
@@ -1008,6 +1102,8 @@ function restore(){
   removeAllPoints(selected.source.data.geometry.coordinates,map)
   layers[selectedIndex].source.data.geometry.coordinates = states[selectedIndex][undoIndex]
     states[selectedIndex].splice(undoIndex+1)
+    tags[selectedIndex] = tagStates[selectedIndex][undoIndex]
+    tagStates[selectedIndex].splice(undoIndex+1)
   selected = layers[selectedIndex]
   map.removeLayer(window.selected.id);
   map.removeSource(window.selected.id);
@@ -1034,6 +1130,10 @@ function restore(){
 }
     function closePreview() {
       popup.style.display = 'none';
+    }
+
+    function closeTag(){
+      document.getElementById("tagPopupContainer").style.display = 'none'
     }
 
 </script>

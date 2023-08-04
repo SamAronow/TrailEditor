@@ -41,14 +41,16 @@ function createLayerClass(coords,map,name,color){
 function addlay(coords,map,name,color){
     window.layers.push(createLayerClass(coords,map,name,color));
     window.states.push(new Array(0));
+    window.tagStates.push(new Array(0))
+    window.tags.push(new Array(0))
     var newCoords = new Array(0);
     for (var i =0; i<coords.length; i++){
         newCoords.push(coords[i])
     }
     window.states[window.states.length-1].push(newCoords);
+    window.tagStates[window.tagStates.length-1].push(new Array(0))
     addDataToTable(name,map);
     map.addLayer(window.layers[window.layers.length-1]);
-    //window.states[window.states.length-1] = window.layers[window.layers.length-1].source.data.geometry.coordinates;
 }
 
 //coord[0]+","+coord[1]
@@ -110,6 +112,12 @@ function removePoint(point){
           map.removeSource(window.selected.id);
           map.addLayer(window.selected);
           addAllPoints(coords,map)
+          for (var j=0; j<window.tags[window.selectedIndex].length;j++){
+            if (window.tags[window.selectedIndex][j][0]==point){
+                window.tags[window.selectedIndex].splice(j,1)
+                j--
+            }
+          }
 }
 
 function addAllPoints(coords,map){
@@ -391,6 +399,13 @@ function addState(){
         window.states[selectedIndex].push(newCoords);
 
     newCoords= null;
+    var newTags = new Array(0);
+    for (var i=0; i<window.tags[selectedIndex].length; i++){
+        newTags.push(window.tags[window.selectedIndex][i])
+    }
+    window.tagStates[selectedIndex].push(newTags)
+    newTags = null
+
     updateVersionDisplay()
 }
 
