@@ -42,7 +42,7 @@ function addlay(coords,map,name,color){
     window.layers.push(createLayerClass(coords,map,name,color));
     window.states.push(new Array(0));
     window.tagStates.push(new Array(0))
-    window.tags.push(new Array(0))
+
     var newCoords = new Array(0);
     for (var i =0; i<coords.length; i++){
         newCoords.push(coords[i])
@@ -99,8 +99,8 @@ function removePoint(point){
        for (var i=0; i<window.layers[window.selectedIndex].source.data.geometry.coordinates.length; i++){
         coords.push(window.layers[window.selectedIndex].source.data.geometry.coordinates[i])
        }
-    //go through every point in the selected line's array and remove it if it matches the given point
 
+    //go through every point in the selected line's array and remove it if it matches the given point
     var i =get2DIndex(coords,point);
     removeAllPoints(coords,map)
           coords.splice(i,1);
@@ -112,12 +112,14 @@ function removePoint(point){
           map.removeSource(window.selected.id);
           map.addLayer(window.selected);
           addAllPoints(coords,map)
-          for (var j=0; j<window.tags[window.selectedIndex].length;j++){
-            if (window.tags[window.selectedIndex][j][0]==point){
-                window.tags[window.selectedIndex].splice(j,1)
-                j--
+          window.tagStates[selectedIndex].push(new Array(0))
+          for (var j=0; j<window.tagStates[selectedIndex][window.tagStates[selectedIndex].length-2].length;j++){
+            if (window.tagStates[selectedIndex][window.tagStates[selectedIndex].length-2][j][0]==point){
+                continue;
             }
+            window.tagStates[selectedIndex][window.tagStates[selectedIndex].length-1].push(window.tagStates[selectedIndex][window.tagStates[selectedIndex].length-2][j])
           }
+          
 }
 
 function addAllPoints(coords,map){
@@ -166,6 +168,13 @@ function removeAllSelectedPoints(){
       window.selectedPoints.splice(j,1);
       j--;
     }
+    window.tagStates[selectedIndex].push(new Array(0))
+          for (var j=0; j<window.tagStates[selectedIndex][window.tagStates[selectedIndex].length-2].length;j++){
+            if (get2DIndex(window.selectedPoints,window.tagStates[selectedIndex][window.tagStates[selectedIndex].length-2][j])==-1){
+                continue;
+            }
+            window.tagStates[selectedIndex][window.tagStates[selectedIndex].length-1].push(window.tagStates[selectedIndex][window.tagStates[selectedIndex].length-2][j])
+          }
     //reassing the selected line with the new array without the point
     window.selected.source.data.geometry.coordinates = coords;
     map.removeLayer(window.selected.id);
@@ -399,13 +408,6 @@ function addState(){
         window.states[selectedIndex].push(newCoords);
 
     newCoords= null;
-    var newTags = new Array(0);
-    for (var i=0; i<window.tags[selectedIndex].length; i++){
-        newTags.push(window.tags[window.selectedIndex][i])
-    }
-    window.tagStates[selectedIndex].push(newTags)
-    newTags = null
-
     updateVersionDisplay()
 }
 

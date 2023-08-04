@@ -179,7 +179,6 @@ dropdown.options[0].value = JSON.stringify(keezer);
 
 function handleArrowKeys(event) {
       if (event.key === 'ArrowUp' || event.key === 'ArrowRight') {
-        console.log(tagStates)
         if (document.getElementById("versionPopupContainer").style.display == 'block'){
             if (undoIndex+2==states[selectedIndex].length){
               printError("At latest version already")
@@ -227,7 +226,6 @@ function handleArrowKeys(event) {
       if (event.key== 'Enter'){
 if (document.getElementById("tagPopupContainer").style.display != 'none'){
         document.getElementById("tagPopupContainer").style.display = 'none'
-        tags[selectedIndex].push([tagPoint,document.getElementById("tagEnter").value])
         tagStates[selectedIndex][tagStates[selectedIndex].length-1].push([tagPoint,document.getElementById("tagEnter").value])
       }
       }
@@ -327,9 +325,14 @@ if (clickOption ==1){
 //for a move click
 if (clickOption ==2){
   if (moveOption ==1){
-    for (var j=0; j<window.tags[window.selectedIndex].length;j++){
-            if (window.tags[window.selectedIndex][j][0]==movePoint){
-                window.tags[window.selectedIndex][j][0]= point;
+    //console.log(tagStates[selectedIndex])
+    tagStates[selectedIndex].push(new Array(0))
+    for (var j=0; j<tagStates[selectedIndex][tagStates[selectedIndex].length-2].length;j++){
+            if (tagStates[selectedIndex][tagStates[selectedIndex].length-2][j][0]==movePoint){
+                tagStates[selectedIndex][tagStates[selectedIndex].length-1].push([point,tagStates[selectedIndex][tagStates[selectedIndex].length-2][j][1]])
+            }
+            else{
+              tagStates[selectedIndex][tagStates[selectedIndex].length-1].push(tagStates[selectedIndex][tagStates[selectedIndex].length-2][j])
             }
           }
     var coords = new Array(0);
@@ -349,9 +352,7 @@ if (clickOption ==2){
       document.getElementById("moveMove").style.backgroundColor = 'rgb(233, 233, 237)';
       movePoint = null;
       map.getCanvas().style.cursor = 'pointer';
-      console.log(tagStates)
       addState();
-      console.log(tagStates)
 
   }
   else{
@@ -410,9 +411,13 @@ if (clickOption==3){
     var i =get2DIndex(coords,selectedPoints[0])
     var j = get2DIndex(coords,selectedPoints[1])
     selectedPoints = new Array(0)
-    for (var k=0; k<window.tags[window.selectedIndex].length;k++){
-            if (window.tags[window.selectedIndex][k][0]==coords[i] || window.tags[window.selectedIndex][k][0]==coords[j]){
-                window.tags[window.selectedIndex][k][0]= point;
+    tagStates[selectedIndex].push(new Array(0))
+          for (var k=0; k<tagStates[selectedIndex][tagStates[selectedIndex].length-2].length;k++){
+            if (tagStates[selectedIndex][tagStates[selectedIndex].length-2][k][0]==coords[i] || tagStates[selectedIndex][tagStates[selectedIndex].length-2][k][0]==coords[j]){
+                tagStates[selectedIndex][tagStates[selectedIndex].length-1].push([point,tagStates[selectedIndex][tagStates[selectedIndex].length-2][k][1]])
+            }
+            else{
+              tagStates[selectedIndex][tagStates[selectedIndex].length-1].push(tagStates[selectedIndex][tagStates[selectedIndex].length-2][k])
             }
           }
     if (Math.abs(i-j)<2){
@@ -577,15 +582,13 @@ function remove(event){
     if (index<selectedIndex){
       selectedIndex-=1;
     }
+    states.splice(index,1)
+    tagStates.splice(index,1)
 }
 
 
 function copy(event){
     var index = event.target.parentNode.parentNode.rowIndex-1;
-    /*var props="[";
-    for (var i=0;i<tags[index].length;i++){
-      props+="[["+tags[index]     "[[x,y],p]"
-    }*/
     var linestring = {
         "type": "Feature",
         "geometry": {
@@ -594,7 +597,7 @@ function copy(event){
         }
     };
     round(turf.lineDistance(linestring)*3280.84/5280,3);
-    var props = "Tags: "+JSON.stringify(tags[index])+", Miles: "+round(turf.lineDistance(linestring)*3280.84/5280,3)+", Version: "+states[index].length;
+    var props = "'Tags': '"+JSON.stringify(tagStates[index][tagStates[index].length-1])+"', 'Miles': '"+round(turf.lineDistance(linestring)*3280.84/5280,3)+"', 'Version': '"+states[index].length+"'";
 
     var jsonString = JSON.stringify(example).substring(0,110)+JSON.stringify(layers[index].source.data.geometry.coordinates)+JSON.stringify(example).substring(147,164)+props+JSON.stringify(example).substring(164)
     navigator.clipboard.writeText(jsonString)
@@ -1102,7 +1105,6 @@ function restore(){
   removeAllPoints(selected.source.data.geometry.coordinates,map)
   layers[selectedIndex].source.data.geometry.coordinates = states[selectedIndex][undoIndex]
     states[selectedIndex].splice(undoIndex+1)
-    tags[selectedIndex] = tagStates[selectedIndex][undoIndex]
     tagStates[selectedIndex].splice(undoIndex+1)
   selected = layers[selectedIndex]
   map.removeLayer(window.selected.id);
